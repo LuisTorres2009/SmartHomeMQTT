@@ -3,7 +3,7 @@
 Este é um aplicativo mobile desenvolvido com React Native e Expo (SDK 54) para o monitoramento e controle residencial em tempo real através do protocolo MQTT. 
 O projeto foi estruturado utilizando boas práticas de arquitetura limpa, separando a camada visual da lógica de persistência de dados.
 
-Link do vídeo:
+Link do vídeo: https://drive.google.com/file/d/19x03KP4ZSpHAuG27ot8Mz5-OOgKm1krT/view?usp=sharing
 
 ## 🚀 Funcionalidades Implementadas
 
