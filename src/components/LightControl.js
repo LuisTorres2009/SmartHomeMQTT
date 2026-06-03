@@ -17,6 +17,6 @@ export default function LightControl({ isLightOn, onToggle }) {
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: '#1E1E1E', padding: 30, borderRadius: 20, alignItems: 'center', width: '100%', marginBottom: 20 },
+  card: { backgroundColor: '#1E1E1E', padding: 30, borderRadius: 20, alignItems: 'center', width: '100%', marginBottom: 17 },
   label: { color: '#AAA', marginTop: 10, fontSize: 14 }
 });

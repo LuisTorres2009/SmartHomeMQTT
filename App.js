@@ -5,6 +5,7 @@ import { storageService } from './src/services/storageService';
 import StatusModal from './src/components/StatusModal';
 import LightControl from './src/components/LightControl';
 import Gauges from './src/components/Gauges';
+import Charts from './src/components/Charts'; 
 
 export default function App() {
   const [isConnected, setIsConnected] = useState(false);
@@ -14,6 +15,7 @@ export default function App() {
   const [hum, setHum] = useState(0);
   const [history, setHistory] = useState([]);
   const [isHistoryVisible, setIsHistoryVisible] = useState(false); 
+  const [isChartsVisible, setIsChartsVisible] = useState(false); 
 
   useEffect(() => {
     const initStorage = async () => {
@@ -48,16 +50,24 @@ export default function App() {
 
     client.onMessageArrived = (message) => {
       const topic = message.destinationName; 
-      const valueParsed = parseFloat(message.payloadString) || 0;
+      let valueParsed = parseFloat(message.payloadString) || 0;
 
       if (topic === 'casa/temp') {
+        // Limita a entrada de temperatura estritamente entre -100 e 100
+        valueParsed = Math.max(-100, Math.min(valueParsed, 100));
+        
         setTemp(valueParsed);
-        handleNewLog(topic, 'Temperatura', `${valueParsed}°C`);
+        handleNewLog(topic, 'Temperatura', `${valueParsed.toFixed(0)}°C`);
       }
+      
       if (topic === 'casa/umid') {
+        // Limita a entrada de umidade estritamente entre 0 e 100
+        valueParsed = Math.max(0, Math.min(valueParsed, 100));
+        
         setHum(valueParsed);
-        handleNewLog(topic, 'Umidade', `${valueParsed}%`);
+        handleNewLog(topic, 'Umidade', `${valueParsed.toFixed(0)}%`);
       }
+      
       if (topic === 'casa/luz') {
         const lightState = message.payloadString === "1";
         setIsLightOn(lightState);
@@ -101,15 +111,14 @@ export default function App() {
       <LightControl isLightOn={isLightOn} onToggle={() => {}} />
       <Gauges temp={temp} hum={hum} />
 
+      {/* --- HISTÓRICO LOCAL --- */}
       <View style={styles.historyWrapper}>
-
         <View style={styles.historyHeader}>
           <TouchableOpacity 
             style={styles.arrowButton} 
             onPress={() => setIsHistoryVisible(!isHistoryVisible)}
             activeOpacity={0.7}
           >
-            {/* Triângulo via View — sem fonte, sem Unicode, sem distorção */}
             <View style={isHistoryVisible ? styles.arrowDown : styles.arrowRight} />
           </TouchableOpacity>
           <Text style={styles.historyTitle}>Histórico de Leituras Local</Text>
@@ -120,6 +129,7 @@ export default function App() {
             data={history}
             keyExtractor={(item) => item.id}
             style={[styles.customScrollbar, styles.historyList]}
+            nestedScrollEnabled={true} 
             renderItem={({ item }) => (
               <View style={styles.historyItem}>
                 <View>
@@ -133,6 +143,24 @@ export default function App() {
         )}
       </View>
 
+      {/* --- GRÁFICOS ANALÍTICOS (ABAIXO DO HISTÓRICO) --- */}
+      <View style={[styles.historyWrapper, { marginBottom: 30 }]}>
+        <View style={styles.historyHeader}>
+          <TouchableOpacity 
+            style={styles.arrowButton} 
+            onPress={() => setIsChartsVisible(!isChartsVisible)}
+            activeOpacity={0.7}
+          >
+            <View style={isChartsVisible ? styles.arrowDown : styles.arrowRight} />
+          </TouchableOpacity>
+          <Text style={styles.historyTitle}>Gráficos Analíticos</Text>
+        </View>
+
+        {isChartsVisible && (
+          <Charts history={history} />
+        )}
+      </View>
+
       <StatusModal visible={showError} onRetry={() => {}} onLater={() => setShowError(false)} />
     </ScrollView>
   );
@@ -141,11 +169,11 @@ export default function App() {
 const styles = StyleSheet.create({
   mainBackground: { backgroundColor: '#121212' },
   scrollContainer: { padding: 20, alignItems: 'center', minHeight: '100%' },
-  header: { color: '#FFF', fontSize: 24, fontWeight: 'bold', marginTop: 30 },
+  header: { color: '#FFF', fontSize: 24, fontWeight: 'bold', marginTop: 25 },
 
   historyWrapper: {
     width: '100%',
-    marginTop: 20,
+    marginTop: 17,
     backgroundColor: '#1E1E1E',
     borderRadius: 20,
     padding: 15,
@@ -164,7 +192,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  // Triângulo apontando pra direita (fechado)
   arrowRight: {
     width: 0,
     height: 0,
@@ -176,7 +203,6 @@ const styles = StyleSheet.create({
     borderLeftColor: '#3498DB',
   },
 
-  // Triângulo apontando pra baixo (aberto)
   arrowDown: {
     width: 0,
     height: 0,
@@ -198,8 +224,8 @@ const styles = StyleSheet.create({
   },
 
   historyList: {
-    height: 270,
     marginTop: 12,
+    maxHeight: 240, 
   },
 
   historyItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderColor: '#333' },
